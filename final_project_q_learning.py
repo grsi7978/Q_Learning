@@ -88,7 +88,9 @@ class QAgent:
 
 def qLearning(agent, env, num_episodes=20000, window=50):
     rewards =[]
+    successes = [] # keep track of how many successes for plotting
     for episode in range(num_episodes):
+        success = False
         state, _ = env.reset()
         episode_over = False
         total_reward = 0
@@ -126,6 +128,7 @@ def qLearning(agent, env, num_episodes=20000, window=50):
                 reward += 1.0
             if terminated: # reward for reaching the flag
                 reward += 10.0
+                success = True
 
             episode_over = terminated or truncated
 
@@ -133,23 +136,52 @@ def qLearning(agent, env, num_episodes=20000, window=50):
             state = next_state
             total_reward += reward
         rewards.append(total_reward)
+        successes.append(success) # track any successful run
         agent.decayEp()
         agent.alpha = max(0.01, agent.alpha * 0.9995) # decay alpha
         if (episode + 1) % 100 == 0:
             print(f"Episode {episode+1}: Total Reward = {total_reward}, Epsilon = {agent.ep:.3f}")         
-    return rewards   
+    return rewards, successes   
+
+def plotRewards(rewards, successes, window=50):
+    episodes = np.arange(len(rewards))
+    smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
+
+    successes_transformed = np.array(successes, dtype=int)
+    success_rate = np.convolve(successes_transformed, np.ones(window)/window, mode='valid')
+
+    fig, ax1 = plt.subplots()
+
+    # rewards
+    ax1.set_xlabel('Episode')
+    ax1.set_ylabel('Reward')
+    ax1.plot(episodes[:len(smoothed)], smoothed, label='Smoothed Reward', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    # successes
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Success Rate', color='green')
+    ax2.plot(episodes[:len(success_rate)], success_rate, label='Success Rate', color='green')
+    ax2.tick_params(axis='y', labelcolor='green')
+    
+
+    fig.tight_layout()
+    plt.title("Training Progress: Reward and Success Rate")
+    plt.show()  
 
 def main():
     env = gym.make("MountainCar-v0")
     agent = QAgent(env)
 
-    qLearning(agent, env, num_episodes=20000, window=50)
+    rewards, successes = qLearning(agent, env, num_episodes=20000, window=50)
 
     # eval_env = gym.make("MountainCar-v0", render_mode="human")
     eval_env = gym.make("MountainCar-v0")    
     mean_reward, std_reward = evaluate(eval_env, agent, num_episodes=10)
     print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward}")
     eval_env.close()
+
+    plotRewards(rewards, successes, window=50)
 
 if __name__ == "__main__":
     main()
