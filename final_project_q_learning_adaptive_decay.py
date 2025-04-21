@@ -14,6 +14,7 @@ class RandomAgent:
 # Basic function to evaluate the agent
 def evaluate(env, agent, num_episodes=20000):
     total_rewards = []
+    total_successes = []
     for episode in range(num_episodes):
         observation, _ = env.reset()
         episode_reward = 0
@@ -23,8 +24,11 @@ def evaluate(env, agent, num_episodes=20000):
             observation, reward, terminated, truncated, _ = env.step(action)
             episode_reward += reward
             done = terminated or truncated
+            if terminated:
+                success = True
         total_rewards.append(episode_reward)
-    return np.mean(total_rewards), np.std(total_rewards)
+        total_successes.append(success)
+    return np.mean(total_rewards), np.std(total_rewards), sum(total_successes)
 
 # Q-Learning Agent
 class QAgent:
@@ -82,9 +86,6 @@ class QAgent:
         td_error = td_target - self.q_table[current_state + (action,)]
         # Update the q-table w/ error and learning rate
         self.q_table[current_state + (action,)] += self.alpha * td_error
-
-    def decayEp(self):
-        self.ep = max(self.ep_min, self.ep * self.ep_decay)
 
     # Decay the epsilon adaptively. E.g. if the average reward is larger than
     # target then decay quickly. If reward is less than, then decay slowly.
@@ -150,7 +151,6 @@ def qLearning(agent, env, num_episodes=20000, window=50):
             state = next_state
             total_reward += reward
         rewards.append(total_reward)
-        # agent.decayEp()
         # boosts tried: 1.1, 1.2, 1.05
         agent.decayEpAdapt(rewards, episode)
         agent.alpha = max(0.01, agent.alpha * 0.9995) # decay alpha
@@ -166,8 +166,8 @@ def main():
 
     # eval_env = gym.make("MountainCar-v0", render_mode="human")
     eval_env = gym.make("MountainCar-v0")    
-    mean_reward, std_reward = evaluate(eval_env, agent, num_episodes=10)
-    print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward}")
+    mean_reward, std_reward, success_count = evaluate(eval_env, agent, num_episodes=10)
+    print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")
     eval_env.close()
 
 if __name__ == "__main__":

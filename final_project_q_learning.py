@@ -14,7 +14,9 @@ class RandomAgent:
 # Basic function to evaluate the agent
 def evaluate(env, agent, num_episodes=20000):
     total_rewards = []
+    total_successes = []
     for episode in range(num_episodes):
+        success = False
         observation, _ = env.reset()
         episode_reward = 0
         done = False
@@ -23,8 +25,11 @@ def evaluate(env, agent, num_episodes=20000):
             observation, reward, terminated, truncated, _ = env.step(action)
             episode_reward += reward
             done = terminated or truncated
+            if terminated:
+                success = True
         total_rewards.append(episode_reward)
-    return np.mean(total_rewards), np.std(total_rewards)
+        total_successes.append(success)
+    return np.mean(total_rewards), np.std(total_rewards), sum(total_successes)
 
 # Q-Learning Agent
 class QAgent:
@@ -176,9 +181,10 @@ def main():
     rewards, successes = qLearning(agent, env, num_episodes=20000, window=50)
 
     # eval_env = gym.make("MountainCar-v0", render_mode="human")
-    eval_env = gym.make("MountainCar-v0")    
-    mean_reward, std_reward = evaluate(eval_env, agent, num_episodes=10)
-    print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward}")
+    eval_env = gym.make("MountainCar-v0")
+    num_episodes = 10    
+    mean_reward, std_reward, success_count = evaluate(eval_env, agent, num_episodes=num_episodes)
+    print(f"Evaluation over {num_episodes} episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")
     eval_env.close()
 
     plotRewards(rewards, successes, window=50)
