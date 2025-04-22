@@ -12,10 +12,12 @@ class RandomAgent:
         return self.action_space.sample()
     
 # Basic function to evaluate the agent
+# Note that there are no bonuses to the rewards in this function, they are raw
 def evaluate(env, agent, num_episodes=20000):
     total_rewards = []
     total_successes = []
     for episode in range(num_episodes):
+        success = False
         observation, _ = env.reset()
         episode_reward = 0
         done = False
