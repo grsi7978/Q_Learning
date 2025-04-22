@@ -40,10 +40,12 @@ class DQNAgent:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.warmup_steps = 1000  # Delay learning <- should improve overall learning as delays learning until more experiences are "collected"
 
+        # Set up the Q-Network and Target Network
         input_dim = env.observation_space.shape[0]
         self.q_net = DQN(input_dim, self.n_actions).to(self.device)
         self.target_net = DQN(input_dim, self.n_actions).to(self.device)
         self.target_net.load_state_dict(self.q_net.state_dict())
+
         self.target_net.eval()
 
         self.optimizer = optim.Adam(self.q_net.parameters(), lr=lr)
@@ -89,8 +91,8 @@ class DQNAgent:
 
         q_values = self.q_net(states).gather(1, actions)
         with torch.no_grad():
-            next_actions = self.q_net(next_states).argmax(1, keepdim=True)
-            max_next_q = self.target_net(next_states).gather(1, next_actions)
+            next_actions = self.q_net(next_states).argmax(1, keepdim=True) # action selection
+            max_next_q = self.target_net(next_states).gather(1, next_actions) # action evaluation
             target_q = rewards + self.gamma * max_next_q * (1 - dones)
 
         loss = nn.SmoothL1Loss()(q_values, target_q) # help stabilize learning 
