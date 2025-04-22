@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 from collections import deque
+import imageio # for creating a gif
 
 # Neural Network
 class DQN(nn.Module):
@@ -163,11 +164,45 @@ def evaluate(env, agent, num_episodes=10):
         total_rewards.append(episode_reward)
     return np.mean(total_rewards), np.std(total_rewards), sum(total_successes)
 
+# for creating a gif of evaluation runs
+def record(agent, env_name, filename="adaptive_q_learning.gif", episodes=10):
+    frames = []
+    env = gym.make(env_name, render_mode="rgb_array")
+
+    for i in range(episodes):
+        state, _ = env.reset()
+        done = False
+        while not done:
+            frame = env.render()
+            frames.append(frame)
+            action = agent.getAction(state, evaluation=True)
+            state, _, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+
+    env.close()
+
+    imageio.mimsave(filename, frames, duration=1/30)
+    print(f"Saved gif to {filename}")
+
 def main():
     env = gym.make("MountainCar-v0")
     agent = DQNAgent(env)
     # episodes attempted: 1000, 2000
-    dqnLearning(agent, env, episodes=2000)
+    rewards = dqnLearning(agent, env, episodes=2000)
+
+    # plot training reward curve
+    plt.figure(figsize=(15,10))
+    plt.plot(rewards, label='Total Reward per Episode')
+    window=50
+    smoothed = np.convolve(rewards, np.ones(window)/window, mode='valid')
+    plt.plot(range(window-1, len(smoothed)+window-1), smoothed, label=f'{window}-Episode Moving Average', linewidth=2)
+    plt.xlabel('Episode')
+    plt.ylabel('Total Episode Reward')
+    plt.title('Training Reward over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
     # eval_env = gym.make("MountainCar-v0", render_mode="human")
     eval_env = gym.make("MountainCar-v0")
@@ -176,6 +211,14 @@ def main():
 
     print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")    
     eval_env.close()
+
+    plt.subplot(1,2,2)
+    plt.pie([success_count, 10 - success_count], labels=["Success", "Failure"], autopct='%1.1f%%', colors=['green', 'red'])
+    plt.title('Success Rate')
+    plt.tight_layout()
+    plt.show()
+
+    record(agent, "MountainCar-v0", filename="img/dqn_learning.gif", episodes=10)
 
 if __name__ == "__main__":
     main()

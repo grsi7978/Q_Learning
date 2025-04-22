@@ -1,6 +1,7 @@
 import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
+import imageio # for creating a gif
 
 # Basic random agent used to test initial setup
 class RandomAgent:
@@ -160,6 +161,26 @@ def qLearning(agent, env, num_episodes=20000, window=50):
             print(f"Episode {episode+1}: Total Reward = {total_reward}, Epsilon = {agent.ep:.3f}")         
     return rewards   
 
+# for creating a gif of evaluation runs
+def record(agent, env_name, filename="adaptive_q_learning.gif", episodes=10):
+    frames = []
+    env = gym.make(env_name, render_mode="rgb_array")
+
+    for i in range(episodes):
+        state, _ = env.reset()
+        done = False
+        while not done:
+            frame = env.render()
+            frames.append(frame)
+            action = agent.getAction(state, evaluation=True)
+            state, _, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+
+    env.close()
+
+    imageio.mimsave(filename, frames, duration=1/30)
+    print(f"Saved gif to {filename}")
+
 def main():
     env = gym.make("MountainCar-v0")
     agent = QAgent(env)
@@ -171,6 +192,8 @@ def main():
     mean_reward, std_reward, success_count = evaluate(eval_env, agent, num_episodes=10)
     print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")
     eval_env.close()
+
+    record(agent, "MountainCar-v0", filename="adaptive_q_learning.gif", episodes=10)
 
 if __name__ == "__main__":
     main()
