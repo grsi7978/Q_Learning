@@ -146,7 +146,7 @@ def evaluate(env, agent, num_episodes=10):
     return np.mean(total_rewards), np.std(total_rewards), sum(total_successes)
 
 # for creating a gif of evaluation runs
-def record(agent, env_name, filename="adaptive_q_learning.gif", episodes=10):
+def record(agent, env_name, filename="img/dqn_learning_lunar_lander.gif", episodes=10):
     frames = []
     env = gym.make(env_name, render_mode="rgb_array")
 
@@ -183,10 +183,10 @@ def main():
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
+    plt.savefig('img/dqn_lunar_lander_reward_time_01.png')
 
-    eval_env = gym.make("LunarLander-v3", render_mode="human")
-    #eval_env = gym.make("LunarLander-v3")
+    # eval_env = gym.make("LunarLander-v3", render_mode="human")
+    eval_env = gym.make("LunarLander-v3")
     
     mean_reward, std_reward, success_count = evaluate(eval_env, agent, num_episodes=10)
 
@@ -197,9 +197,9 @@ def main():
     plt.pie([success_count, 10 - success_count], labels=["Success", "Failure"], autopct='%1.1f%%', colors=['green', 'red'])
     plt.title('Success Rate')
     plt.tight_layout()
-    plt.show()
+    plt.savefig('img/dqn_lunar_lander_success_rate_01.png')
 
-    #record(agent, "LunarLander-v3", filename="img/dqn_learning_lunar_lander.gif", episodes=10)
+    record(agent, "LunarLander-v3", filename="img/dqn_learning_lunar_lander.gif", episodes=10)
 
 if __name__ == "__main__":
     main()

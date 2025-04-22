@@ -162,7 +162,7 @@ def qLearning(agent, env, num_episodes=20000, window=50):
     return rewards   
 
 # for creating a gif of evaluation runs
-def record(agent, env_name, filename="adaptive_q_learning.gif", episodes=10):
+def record(agent, env_name, filename="img/adaptive_q_learning.gif", episodes=10):
     frames = []
     env = gym.make(env_name, render_mode="rgb_array")
 
@@ -193,7 +193,7 @@ def main():
     print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")
     eval_env.close()
 
-    record(agent, "MountainCar-v0", filename="adaptive_q_learning.gif", episodes=10)
+    record(agent, "MountainCar-v0", filename="img/adaptive_q_learning.gif", episodes=10)
 
 if __name__ == "__main__":
     main()
