@@ -138,9 +138,10 @@ def evaluate(env, agent, num_episodes=10):
             state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
             episode_reward += reward
-            if terminated:
-                success = True
-        
+            
+        if episode_reward > 200:
+            success = True
+
         total_successes.append(success)
         total_rewards.append(episode_reward)
     return np.mean(total_rewards), np.std(total_rewards), sum(total_successes)
@@ -184,6 +185,7 @@ def main():
     plt.grid(True)
     plt.tight_layout()
     plt.savefig('img/dqn_lunar_lander_reward_time_01.png')
+    plt.close()
 
     # eval_env = gym.make("LunarLander-v3", render_mode="human")
     eval_env = gym.make("LunarLander-v3")
@@ -193,11 +195,12 @@ def main():
     print(f"Evaluation over 10 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")    
     eval_env.close()
 
-    plt.subplot(1,2,2)
+    plt.figure(figsize=(6, 6))
     plt.pie([success_count, 10 - success_count], labels=["Success", "Failure"], autopct='%1.1f%%', colors=['green', 'red'])
     plt.title('Success Rate')
     plt.tight_layout()
     plt.savefig('img/dqn_lunar_lander_success_rate_01.png')
+    plt.close()
 
     record(agent, "LunarLander-v3", filename="img/dqn_learning_lunar_lander.gif", episodes=10)
 
