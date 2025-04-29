@@ -2,12 +2,12 @@ from stable_baselines3 import PPO
 import gymnasium as gym
 import numpy as np
 import imageio # for creating a gif
-from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecNormalize
 
 class PPOAgent:
     def __init__(self, env="LunarLander-v3", device="cpu"):
         # wrap env and normalize obs and rewards (https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html)
-        env_vec = SubprocVecEnv([lambda: gym.make("LunarLander-v3") for _ in range(4)])
+        env_vec = SubprocVecEnv([lambda: gym.make(env) for _ in range(4)])
         self.env = VecNormalize(env_vec)
         self.model = PPO(
             "MlpPolicy", # multilayer policy
@@ -62,19 +62,25 @@ class PPOAgent:
 def record(agent, env_name, filename="img/ppo_learning_lunar_lander.gif", episodes=10):
     frames = []
     env = gym.make(env_name, render_mode="rgb_array")
+    # Load the normalization stats for the environment that were saved before
+    env = DummyVecEnv([lambda: env])
+    env = VecNormalize.load("ppo/vecnormalize.pkl", env)
+    env.training = False
+    env.norm_reward = False
+
     frame_idx = 0
 
     for i in range(episodes):
-        state, _ = env.reset()
+        state = env.reset()
         done = False
 
         while not done:
-            if frame_idx % 2 == 0:
+            if frame_idx % 2 == 0: # reduce the number of frames captured due to RAM 
                 frame = env.render()
                 frames.append(frame)
-            action, _ = agent.model.predict([state], deterministic=True)
-            state, _, terminated, truncated, _ = env.step(action[0])
-            done = terminated or truncated
+
+            action, _ = agent.model.predict(state, deterministic=True)
+            state, reward, done, info = env.step(action)
             frame_idx += 1
 
     env.close()
@@ -85,7 +91,8 @@ def record(agent, env_name, filename="img/ppo_learning_lunar_lander.gif", episod
 def main():
     agent = PPOAgent()
     agent.train(timesteps=2_000_000) # timesteps attempted: 500_000, 1_500_000, 2_000_000, 5_000_000
-    
+    agent.env.save("ppo/vecnormalize.pkl")
+
     # evaluate on 10 episodes
     mean_reward, std_reward, success_count = agent.evaluate(episodes=50)
     print(f"Evaluation over 50 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")    
