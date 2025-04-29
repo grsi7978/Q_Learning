@@ -91,9 +91,9 @@ def record(agent, env_name, filename="img/ppo_learning_lunar_lander.gif", episod
 def main():
     agent = PPOAgent()
     agent.train(timesteps=2_000_000) # timesteps attempted: 500_000, 1_500_000, 2_000_000, 5_000_000
-    agent.env.save("ppo/vecnormalize.pkl")
+    agent.env.save("ppo/vecnormalize.pkl") # saving for use in the record function to make gif
 
-    # evaluate on 10 episodes
+    # evaluate on 50 episodes
     mean_reward, std_reward, success_count = agent.evaluate(episodes=50)
     print(f"Evaluation over 50 episodes: Average Reward = {mean_reward} +/- {std_reward} :: Number of Successes = {success_count}")    
 
